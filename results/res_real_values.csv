@@ -1,0 +1,148 @@
+countermeasure,consistent,realOs,realBrowser,predictedOs,predictedBrowser
+cfpb,False,Windows 7,Chrome,Windows 7,Chrome
+no,True,Windows 7,Chrome,Windows 7,Chrome
+cd,False,Windows 7,Chrome,Windows 7,Chrome
+cd,False,Windows 7,Chrome,Windows 7,Chrome
+cd,False,Windows 7,Chrome,Windows 7,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows 8,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+uas,False,Windows 7,Chrome,Windows,Chrome
+cd,False,Windows 7,Chrome,Windows 7,Chrome
+no,True,Windows 7,IE,Windows 7,IE
+no,True,Windows 7,Firefox,Windows 7,Firefox
+cd,False,Windows 7,Firefox,Windows 7,Firefox
+cd,False,Windows 7,Firefox,Windows 7,Firefox
+no,True,Windows 7,Firefox,Windows 7,Firefox
+cd,False,Windows 7,Firefox,Windows 7,Firefox
+cd,False,Windows 7,Firefox,Windows 7,Firefox
+cd,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+cfpb,False,Windows 8,Chrome,Windows 8,Chrome
+ras,False,Windows 7,Firefox,Windows 7,Firefox
+no,True,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+cd,False,Windows 8,Chrome,Windows 8,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+brave,False,Windows 8,Chrome,Windows 8.1,Brave
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+uas,False,Windows 8,Chrome,Windows,Chrome
+no,True,Windows 8,IE,Windows 8,IE
+cd,False,Windows 8,Firefox,Windows 8,Firefox
+cd,False,Windows 8,Firefox,Windows 8,Firefox
+cd,False,Windows 8,Firefox,Windows 8,Firefox
+cd,False,Windows 8,Firefox,Windows 8,Firefox
+cd,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+no,True,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+cfpb,False,Linux,Chrome,Linux,Chrome
+ras,False,Windows 8,Firefox,Windows 8,Firefox
+brave,False,Linux,Chrome,Linux,Brave
+no,True,Linux,Chrome,Linux,Chrome
+brave,False,Linux,Chrome,Linux,Brave
+cd,False,Linux,Chrome,Linux,Chrome
+cd,False,Linux,Chrome,Linux,Chrome
+ffp,False,Linux,Firefox,Linux,Firefox
+cd,False,Linux,Chrome,Linux,Chrome
+no,True,Linux,Chrome,Linux,Chrome
+no,True,Linux,Firefox,Ubuntu,Firefox
+ffp,False,Linux,Firefox,Linux,Firefox
+cd,False,Linux,Firefox,Ubuntu,Firefox
+cd,False,Linux,Firefox,Ubuntu,Firefox
+cd,False,Linux,Firefox,Ubuntu,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Ubuntu,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ffp,False,Windows 8,Firefox,Windows,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ras,False,Linux,Firefox,Linux,Firefox
+ffp,False,Windows 8,Firefox,Windows,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+brave,False,Android,Chrome Mobile,Android,Brave
+fpr,False,Linux,Firefox,Linux,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+ffp,False,Linux,Firefox,Linux,Firefox
+fpr,False,Linux,Firefox,Linux,Firefox
+ffp,False,Linux,Firefox,Linux,Firefox

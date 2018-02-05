@@ -1,0 +1,11 @@
+pandas
+numpy
+ua_parser
+scipy
+pymongo
+matplotlib
+h5py
+ua-parser
+pytest
+scikit-learn
+Pillow

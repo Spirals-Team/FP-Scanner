@@ -19,7 +19,7 @@ pip install -r requirements.txt
 
 # Import database
 
-Our prototype relies on MongoDB, thus you need to ensure that MongoDB is running.
+Our prototype relies on MongoDB to store the fingerprints, thus you need to ensure that MongoDB is running.
 
 Run the command below to import the database. 
 ```ruby

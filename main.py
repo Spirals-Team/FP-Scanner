@@ -7,7 +7,8 @@ import sys
 import pandas as pd
 
 fp_manager = FingerprintDataManager()
-scanner = Scanner()
+scanner = Scanner(number_wrong_fonts=2, number_wrong_features=1, number_transparent_pixels=17200)
+
 
 PREDICTION_FILE = "results/res_prediction.csv"
 REAL_VALUES_FILE = "results/res_real_values.csv"

@@ -39,39 +39,37 @@ class Scanner:
     ETSL = "ETSL"
     PRODUCT_SUB = "PRODUCT_SUB"
     TOUCH_SUPPORT = "TOUCH_SUPPORT"
+    EMOJI = "EMOJI"
 
     ANALYSES = [
         SAME_UAS, PLATFORM_OS_REF, MQ_OS, PLUGINS_OS, FONTS_OS, WEBGL_OS,
         ERRORS_BROWSER, FEATURES_BROWSER, NAVIGATOR_OVERWRITTEN,
         CANVAS_OVERWRITTEN, SCREEN_OVERWRITTEN, TIMEZONE_OVERWRITTEN,
-        CANVAS_PIXELS, ACCELEROMETER, SCREEN_SIZE, ETSL, PRODUCT_SUB,
-        TOUCH_SUPPORT
+        CANVAS_PIXELS, ACCELEROMETER, ETSL, PRODUCT_SUB,
+        TOUCH_SUPPORT, EMOJI
     ]
 
     OS_ANALYSES = {
         SAME_UAS, PLATFORM_OS_REF, MQ_OS, PLUGINS_OS, FONTS_OS, MULTIMEDIA_DEVICES_BLOCKED, WEBGL_OS,
-        ACCELEROMETER, SCREEN_SIZE, TOUCH_SUPPORT
+        ACCELEROMETER, TOUCH_SUPPORT, EMOJI
     }
 
     BROWSER_ANALYSES = {
-       ERRORS_BROWSER, FEATURES_BROWSER, ETSL, PRODUCT_SUB
+        ERRORS_BROWSER, FEATURES_BROWSER, ETSL, PRODUCT_SUB
     }
 
-    def __init__(self):
+    def __init__(self, number_wrong_fonts, number_wrong_features, number_transparent_pixels):
         self.font_to_os = dict()
         with open("./experiments/fonts_linked.csv", "r") as f:
             for line in f:
                 l_split = line.split(",")
                 self.font_to_os[l_split[0]] = l_split[1]
 
-        self.caniuse_features = self.__read_caniusefeatures()
-        # self.cnn_model = load_model("./canvas_model.h5")
-        # self.index_cnn_to_label = dict()
-        # with open("./ressources/cnn_labels.csv", "r") as f:
-        #     for line in f.readlines():
-        #         l = line.split(",")
-        #         self.index_cnn_to_label[int(l[0])] = l[1][:-1]
+        self.number_wrong_fonts = number_wrong_fonts
+        self.number_wrong_features = number_wrong_features
+        self.number_transparent_pixels = number_transparent_pixels
 
+        self.caniuse_features = self.__read_caniusefeatures()
 
     def should_be_consistent(self, fingerprint: Fingerprint):
         """
@@ -122,8 +120,6 @@ class Scanner:
             if analyses_results[-1].is_consistent or run_all:
                 analyses_results.append(self.__is_screen_overwritten(fingerprint))
             if analyses_results[-1].is_consistent or run_all:
-                analyses_results.append(self.__is_screen_size_consistent(fingerprint))
-            if analyses_results[-1].is_consistent or run_all:
                 analyses_results.append(self.__is_accelerometer_consistent(fingerprint))
             if analyses_results[-1].is_consistent or run_all:
                 analyses_results.append(self.__is_touch_support_consistent(fingerprint))
@@ -142,14 +138,20 @@ class Scanner:
         failed_os_analyses = set()
         failed_browser_analyses = set()
 
+        mq_weight = 1
+        platform_weight = 1
+        fonts_weight = 1
+        plugins_weight = 1
+        webgl_weight = 1
+
         for analysis in analyses_results:
             if analysis.name in Scanner.OS_ANALYSES and \
-               not analysis.is_consistent:
-               failed_os_analyses.add(analysis)
+                    not analysis.is_consistent:
+                failed_os_analyses.add(analysis)
             elif analysis.name in Scanner.BROWSER_ANALYSES and \
-                 not analysis.is_consistent:
+                    not analysis.is_consistent:
                 failed_browser_analyses.add(analysis)
-        
+
         # We try to guess the real OS value
         # we define a list of possible real OSes
         # at the end we make a sort of vote
@@ -168,17 +170,17 @@ class Scanner:
             # we could also learn from non matching media queries
             # in our case we only consider matching media queries
             if fingerprint.mq_os[0]:
-                real_os.append(("Mac OS X", 30))
+                real_os.append(("Mac OS X", mq_weight))
             elif fingerprint.mq_os[1]:
-                real_os.append(("Windows XP", 30))
+                real_os.append(("Windows XP", mq_weight))
             elif fingerprint.mq_os[2]:
-                real_os.append(("Windows Vista", 30))
+                real_os.append(("Windows Vista", mq_weight))
             elif fingerprint.mq_os[3]:
-                real_os.append(("Windows 7", 30))
+                real_os.append(("Windows 7", mq_weight))
             elif fingerprint.mq_os[4]:
-                real_os.append(("Windows 8", 30))
+                real_os.append(("Windows 8", mq_weight))
             elif fingerprint.mq_os[5]:
-                real_os.append(("Windows 10", 30))
+                real_os.append(("Windows 10", mq_weight))
 
             # we continue with the plugins
             extensions = {".so", ".dll", ".plugin"}
@@ -189,7 +191,7 @@ class Scanner:
                     found_extension = extension
 
             # if a plugin filename extension has been found, we make the hypothesis
-            # it is linked to the real OS
+            #  it is linked to the real OS
             # .dll doesn't enable to have exact version of Windows
             extension_to_os = {
                 ".so": "Linux",
@@ -197,10 +199,11 @@ class Scanner:
                 ".plugin": "Mac OS X"
             }
             if found_extension is not None:
-                real_os.append((extension_to_os[found_extension], 5))
+                real_os.append((extension_to_os[found_extension], plugins_weight))
 
             # if incons between ua and platform, trust platform since it is probably a user agent spoofer
-            is_platform_incons = len([(not x.is_consistent and x.name == Scanner.PLATFORM_OS_REF ) for x in failed_browser_analyses]) == 1
+            is_platform_incons = len(
+                [(not x.is_consistent and x.name == Scanner.PLATFORM_OS_REF) for x in failed_browser_analyses]) == 1
             if is_platform_incons:
                 platforms_to_os = {
                     "Linux i686": "Linux",
@@ -220,9 +223,9 @@ class Scanner:
                     "Linux armv8l": "Android"
                 }
                 try:
-                    real_os.append((platforms_to_os[fingerprint.platform], 3))
+                    real_os.append((platforms_to_os[fingerprint.platform], platform_weight))
                 except KeyError:
-                    real_os.append(("Other", 3))
+                    real_os.append(("Other", platform_weight))
 
             # We continue with fonts
             os_family_to_count = dict()
@@ -236,18 +239,18 @@ class Scanner:
                     except KeyError:
                         # We pass, it just means the font has not been collected
                         pass
-            
+
             os_most_likely = None
             for os_family in os_family_to_count:
                 # we set a minimum number of fonts at 8
                 if os_family_to_count[os_family] > 8 and \
-                  (os_most_likely is None or
-                   os_family_to_count[os_most_likely] < os_family_to_count[os_family]):
+                        (os_most_likely is None or
+                         os_family_to_count[os_most_likely] < os_family_to_count[os_family]):
                     os_most_likely = os_family
-            
+
             # Once again for Windows we don't have the detail of the version
             if os_most_likely is not None:
-                real_os.append((os_most_likely, 15))
+                real_os.append((os_most_likely, fonts_weight))
 
             # Go on with webGL
             renderer_subtr_to_os_family = {
@@ -259,14 +262,13 @@ class Scanner:
 
             for renderer_substr in renderer_subtr_to_os_family:
                 if renderer_substr in fingerprint.web_gl_info[0] or \
-                   renderer_substr in fingerprint.web_gl_info[1]:
-                   real_os.append(
-                       (renderer_subtr_to_os_family[renderer_substr],
-                        10
-                       )
-                   )
-                   break
-
+                        renderer_substr in fingerprint.web_gl_info[1]:
+                    real_os.append(
+                        (renderer_subtr_to_os_family[renderer_substr],
+                         webgl_weight
+                         )
+                    )
+                    break
 
         # We continue with the browser
         # We try to guess the real browser family and version
@@ -281,7 +283,7 @@ class Scanner:
         else:
             # we start with etsl
             if fingerprint.etsl == 39:
-                real_browser_family = "Internet Explorer" 
+                real_browser_family = "Internet Explorer"
             elif fingerprint.etsl == 33:
                 # we ignore Opera for the moment
                 # onopera... event to detect it
@@ -297,7 +299,7 @@ class Scanner:
 
             # now we try to detect real version
             # There may be problem since we don't detect mobile version
-            # of browsers such as Chrome mobile
+            #  of browsers such as Chrome mobile
             # if it is chrome we may also try for Opera
             browser_version_to_count_features = dict()
             for feature in fingerprint.modernizr:
@@ -308,21 +310,20 @@ class Scanner:
                                 browser_version_to_count_features[browser_version] = 1
                             else:
                                 browser_version_to_count_features[browser_version] += 1
-            
+
             version_most_likely = None
             for browser_version in browser_version_to_count_features:
                 if version_most_likely is None:
                     version_most_likely = browser_version
                 elif browser_version_to_count_features[browser_version] > \
-                     browser_version_to_count_features[version_most_likely]:
-                     version_most_likely = browser_version
+                        browser_version_to_count_features[version_most_likely]:
+                    version_most_likely = browser_version
 
             for browser_version in browser_version_to_count_features:
                 if browser_version_to_count_features[browser_version] == \
-                   browser_version_to_count_features[version_most_likely]:
+                        browser_version_to_count_features[version_most_likely]:
                     real_browser_version.append(browser_version)
 
-        
         # we compute the winner of the vote for real os
         # special case if only windows and one of them is windows + version
         os_to_count_votes = dict()
@@ -338,9 +339,9 @@ class Scanner:
                 os_to_count_votes[os_vote] += vote[1]
 
             if max_vote is None or \
-               os_to_count_votes[os_vote] > os_to_count_votes[max_vote]:
-               max_vote = os_vote
-        
+                    os_to_count_votes[os_vote] > os_to_count_votes[max_vote]:
+                max_vote = os_vote
+
         if max_vote is None:
             max_vote = fingerprint.os_ref_js
 
@@ -348,7 +349,7 @@ class Scanner:
             for vote in real_os:
                 # don't remove whitespace after "Windows"
                 if "Windows " in vote[0]:
-                   max_vote = vote[0]
+                    max_vote = vote[0]
 
                 # edge case for Windows 8.1
                 if "Windows 8" in max_vote:
@@ -377,12 +378,11 @@ class Scanner:
         # if browser is IE we don't check for equality of UA
         # we only check that both UAs reflect the same browser and OS
         if fingerprint.browser_ref_js == 'IE':
-            is_consistent = (fingerprint.browser_ref_js == fingerprint.browser_ref_http) and\
+            is_consistent = (fingerprint.browser_ref_js == fingerprint.browser_ref_http) and \
                             (fingerprint.os_ref_js == fingerprint.os_ref_http)
         else:
             is_consistent = fingerprint.user_agent_js == fingerprint.user_agent_http
         return AnalysisResult(Scanner.SAME_UAS, is_consistent, data={})
-
 
     def __is_platform_os_ref_consistent(self, fingerprint: Fingerprint):
         """
@@ -427,7 +427,7 @@ class Scanner:
         inconsistent = False
         data = dict()
         # we test if one one the media query is true and the browser
-        # is not firefox
+        #  is not firefox
         found = False
         for mq in fingerprint.mq_os:
             if mq:
@@ -435,7 +435,7 @@ class Scanner:
                 break
 
         if found and (fingerprint.browser_ref_js != "Firefox" or (fingerprint.browser_ref_js == "Firefox" and \
-            fingerprint.browser_version_ref_js > 57)):
+                                                                  fingerprint.browser_version_ref_js > 57)):
             # starting at version 58, these media queries don't exist anymore either in normal mode or when
             # fingerprinting protection is activated
             # When fingerprinting protection is activated the UA change the version to 52 which triggers a true positive
@@ -450,56 +450,55 @@ class Scanner:
         if fingerprint.browser_ref_js == 'Firefox' and fingerprint.browser_version_ref_js < 58:
             # mq_os[1] tests Windows XP
             if not inconsistent and \
-            (fingerprint.mq_os[1] and fingerprint.os_ref_js != "Windows XP") or \
-            (not fingerprint.mq_os[1] and fingerprint.os_ref_js == "Windows XP" and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[1] and fingerprint.os_ref_js != "Windows XP") or \
+                    (not fingerprint.mq_os[1] and fingerprint.os_ref_js == "Windows XP" and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows XP"
                 inconsistent = True
 
             # mq_os[2] tests Windows Vista
             if not inconsistent and \
-            (fingerprint.mq_os[2] and fingerprint.os_ref_js != "Windows Vista") or \
-            (not fingerprint.mq_os[2] and fingerprint.os_ref_js == "Windows Vista" and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[2] and fingerprint.os_ref_js != "Windows Vista") or \
+                    (not fingerprint.mq_os[2] and fingerprint.os_ref_js == "Windows Vista" and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows Vista"
                 inconsistent = True
 
             # mq_os[3] tests Windows 7
             if not inconsistent and \
-            (fingerprint.mq_os[3] and fingerprint.os_ref_js != "Windows 7") or \
-            (not fingerprint.mq_os[3] and fingerprint.os_ref_js == "Windows 7" and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[3] and fingerprint.os_ref_js != "Windows 7") or \
+                    (not fingerprint.mq_os[3] and fingerprint.os_ref_js == "Windows 7" and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows 7"
                 inconsistent = True
 
             # mq_os[4] tests Windows 8
             # Warning, may fail if Windows 8.1?
             if not inconsistent and \
-            (fingerprint.mq_os[4] and "Windows 8" not in fingerprint.os_ref_js) or \
-            (not fingerprint.mq_os[4] and "Windows 8" in fingerprint.os_ref_js and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[4] and "Windows 8" not in fingerprint.os_ref_js) or \
+                    (not fingerprint.mq_os[4] and "Windows 8" in fingerprint.os_ref_js and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows 8"
                 inconsistent = True
 
             # Duplicate for Windows 8.1
             # May be removed later
             if not inconsistent and \
-            (fingerprint.mq_os[4] and fingerprint.os_ref_js != "Windows 8.1") or \
-            (not fingerprint.mq_os[4] and fingerprint.os_ref_js == "Windows 8.1" and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[4] and fingerprint.os_ref_js != "Windows 8.1") or \
+                    (not fingerprint.mq_os[4] and fingerprint.os_ref_js == "Windows 8.1" and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows 8.1"
                 inconsistent = True
 
             # mq_os[5] tests Windows 10
             if not inconsistent and \
-            (fingerprint.mq_os[5] and fingerprint.os_ref_js != "Windows 10") or \
-            (not fingerprint.mq_os[5] and fingerprint.os_ref_js == "Windows 10" and \
-            (fingerprint.browser_ref_js == "Firefox" or found)):
+                    (fingerprint.mq_os[5] and fingerprint.os_ref_js != "Windows 10") or \
+                    (not fingerprint.mq_os[5] and fingerprint.os_ref_js == "Windows 10" and \
+                     (fingerprint.browser_ref_js == "Firefox" or found)):
                 data["mq_failed"] = "Windows 10"
                 inconsistent = True
 
         return AnalysisResult(Scanner.MQ_OS, not inconsistent, data)
-
 
     def __are_plugins_consistent_os(self, fingerprint: Fingerprint):
         """
@@ -533,20 +532,15 @@ class Scanner:
         consistent = not forbidden_extension_found
         return AnalysisResult(Scanner.PLUGINS_OS, consistent, data)
 
-
     def __is_webgl_consistent_os(self, fingerprint: Fingerprint):
         """
             Analysis name: WEBGL_OS
             Checks if webgl vendor is consistent with the OS claimed
         """
-        # TODO When we'll have more info, detect fake mobile devices
-        # using vendor, and particularly Qualcomm value
-
-        # web_gl_info[1] = renderer
         inconsistent = False
         data = dict()
 
-        # TODO for iPad/iPhone: vendor : Apple Inc. Apple A8 GPU
+        # iPad/iPhone: vendor : Apple Inc. Apple A8 GPU
         # Apple Inc. / Apple A9X GPU
         # Apple Inc. /Apple A8X GPU, A7...
         # For ipad : Imagination Technologies / PowerVR SGX 543 , seems to be also available for other brands
@@ -554,10 +548,10 @@ class Scanner:
         # see http://www.anandtech.com/show/6426/ipad-4-gpu-performance-analyzed-powervr-sgx-554mp4-under-the-hood
 
         if fingerprint.os_ref_js != "Windows Phone" and \
-            "Windows" in fingerprint.os_ref_js or \
-            fingerprint.os_ref_js == "Mac OS X"  or \
-            fingerprint.os_ref_js == "Linux" or \
-            fingerprint.os_ref_js == "Ubuntu":
+                "Windows" in fingerprint.os_ref_js or \
+                fingerprint.os_ref_js == "Mac OS X" or \
+                fingerprint.os_ref_js == "Linux" or \
+                fingerprint.os_ref_js == "Ubuntu":
             forbidden_extensions = ["ANGLE", "OpenGL", "Mesa", "Gallium", "Qualcomm"]
             # False negative with Windows Phone, change this later
             if "Windows" in fingerprint.os_ref_js:
@@ -569,7 +563,7 @@ class Scanner:
 
             for extension in forbidden_extensions:
                 if extension in fingerprint.web_gl_info[1] or \
-                extension in fingerprint.web_gl_info[0]:
+                        extension in fingerprint.web_gl_info[0]:
                     inconsistent = True
                     data["forbidden_extension"] = extension
                     break
@@ -588,7 +582,7 @@ class Scanner:
         if fingerprint.os_ref_js != "Windows Phone" and "Windows" in fingerprint.os_ref_js:
             os_family = "Windows"
         elif "Ubuntu" in fingerprint.os_ref_js or "Linux" in fingerprint.os_ref_js or "Fedora" \
-        in fingerprint.os_ref_js:
+                in fingerprint.os_ref_js:
             os_family = "Linux"
         elif "Mac OS X" in fingerprint.os_ref_js:
             os_family = "Mac OS X"
@@ -611,7 +605,7 @@ class Scanner:
 
         data["nb_wrong_fonts"] = len(data["wrong_fonts"])
         data["nb_right_fonts"] = nb_right_fonts
-        consistent = float(nb_wrong_fonts/ (nb_right_fonts + 1)) < 5
+        consistent = nb_wrong_fonts < self.number_wrong_fonts
         return AnalysisResult(Scanner.FONTS_OS, consistent, data)
 
     def __are_devices_blocked(self, fingerprint: Fingerprint):
@@ -630,12 +624,12 @@ class Scanner:
         # errors_generated[4] = error.number
         # it is only available on IE browsers
         if not inconsistent and \
-            (fingerprint.errors_generated[3] != None and \
-            (fingerprint.browser_ref_js != "IE" and \
-            fingerprint.browser_ref_js != "Edge")) or \
-            (fingerprint.errors_generated[3] == None and \
-            (fingerprint.browser_ref_js == "IE" or \
-            fingerprint.browser_ref_js == "Edge")):
+                (fingerprint.errors_generated[3] != None and \
+                 (fingerprint.browser_ref_js != "IE" and \
+                  fingerprint.browser_ref_js != "Edge")) or \
+                (fingerprint.errors_generated[3] == None and \
+                 (fingerprint.browser_ref_js == "IE" or \
+                  fingerprint.browser_ref_js == "Edge")):
             inconsistent = True
             errors_failed.append("IE Edge exception signature")
 
@@ -643,30 +637,30 @@ class Scanner:
         # its is only available on Firefox based browsers
         # works also for firefox mobile
         if (fingerprint.errors_generated[1] != None and "Firefox" not in fingerprint.browser_ref_js) or \
-            (fingerprint.errors_generated[1] == None and "Firefox" in fingerprint.browser_ref_js):
+                (fingerprint.errors_generated[1] == None and "Firefox" in fingerprint.browser_ref_js):
             inconsistent = True
             errors_failed.append("Firefox filename")
 
         # errors_generated[7] = websocket error.toString()
         if ("An invalid or illegal" in fingerprint.errors_generated[7] and \
             "Firefox" not in fingerprint.browser_ref_js) or \
-            ("An invalid or illegal" not in fingerprint.errors_generated[7] and \
-            "Firefox" in fingerprint.browser_ref_js):
+                ("An invalid or illegal" not in fingerprint.errors_generated[7] and \
+                 "Firefox" in fingerprint.browser_ref_js):
             inconsistent = True
             errors_failed.append("Firefox websocket constructor")
 
         if ("Failed to construct 'WebSocket'" in fingerprint.errors_generated[7] and \
             "Chrome" not in fingerprint.browser_ref_js and \
             fingerprint.browser_ref_js != "Opera") or \
-            ("Failed to construct 'WebSocket'" not in fingerprint.errors_generated[7] and \
-            ("Chrome" in fingerprint.browser_ref_js or fingerprint.browser_ref_js == "Opera")):
+                ("Failed to construct 'WebSocket'" not in fingerprint.errors_generated[7] and \
+                 ("Chrome" in fingerprint.browser_ref_js or fingerprint.browser_ref_js == "Opera")):
             inconsistent = True
             errors_failed.append("Chrome websocket constructor")
 
         if (fingerprint.res_overflow[1] == "InternalError" and \
             "Firefox" not in fingerprint.browser_ref_js) or \
-            (fingerprint.res_overflow[1] != "InternalError" and \
-            "Firefox" in fingerprint.browser_ref_js):
+                (fingerprint.res_overflow[1] != "InternalError" and \
+                 "Firefox" in fingerprint.browser_ref_js):
             inconsistent = True
             errors_failed.append("Firefox stack overflow")
 
@@ -674,14 +668,14 @@ class Scanner:
             "Chrome" not in fingerprint.browser_ref_js and \
             fingerprint.browser_ref_js != "Opera" and \
             "Safari" not in fingerprint.browser_ref_js) or \
-            (fingerprint.res_overflow[1] != "RangeError" and \
-            ("Chrome" in fingerprint.browser_ref_js or \
-            fingerprint.browser_ref_js == "Opera" or \
-            "Safari" in fingerprint.browser_ref_js)):
-                inconsistent = True
-                errors_failed.append("Chrome stack overflow")
+                (fingerprint.res_overflow[1] != "RangeError" and \
+                 ("Chrome" in fingerprint.browser_ref_js or \
+                  fingerprint.browser_ref_js == "Opera" or \
+                  "Safari" in fingerprint.browser_ref_js)):
+            inconsistent = True
+            errors_failed.append("Chrome stack overflow")
 
-        # TODO check message depending on the browser
+        # check message depending on the browser
         # errors_generated[0] = error.message
         # it depends on the browser
 
@@ -739,7 +733,7 @@ class Scanner:
             that browser claimed in user agent should have
             Data are extracted from caniuse.com website
         """
-        # https://raw.githubusercontent.com/Fyrd/caniuse/master/data.json
+        #  https://raw.githubusercontent.com/Fyrd/caniuse/master/data.json
         # Only 48 features have exactly the same name between Modernizr
         # And caniuse. Maybe remove the others.
         nb_errors = 0
@@ -748,15 +742,16 @@ class Scanner:
             if feature in self.caniuse_features:
                 if fingerprint.browser_ref_js in self.caniuse_features[feature]:
                     should_feature_be_available = (
-                        str(fingerprint.browser_version_ref_js) in \
-                        self.caniuse_features[feature][fingerprint.browser_ref_js]
+                            str(fingerprint.browser_version_ref_js) in \
+                            self.caniuse_features[feature][fingerprint.browser_ref_js]
                     )
                     if fingerprint.modernizr[feature] != should_feature_be_available:
                         errors_features.append(feature)
                         nb_errors += 1
 
         # 0 might be a bit too strict, maybe allow one error?
-        consistent = nb_errors <= 4
+        # consistent = nb_errors <= 4
+        consistent = nb_errors <= self.number_wrong_features
         data = {"errors_features": ";".join(errors_features)} if errors_features else {}
         return AnalysisResult(Scanner.FEATURES_BROWSER, consistent, data)
 
@@ -770,10 +765,10 @@ class Scanner:
         overwritten_properties = []
         for prop_name in fingerprint.navigator_prototype:
             if fingerprint.navigator_prototype[prop_name] != "" and \
-               "native" not in fingerprint.navigator_prototype[prop_name]:
+                    "native" not in fingerprint.navigator_prototype[prop_name]:
 
                 if prop_name == "constructor" and fingerprint.browser_ref_http == 'IE':
-                    continue # special case for IE
+                    continue  # special case for IE
 
                 consistent = False
                 overwritten_properties.append("%s;;;%s" %
@@ -781,12 +776,11 @@ class Scanner:
                                                   prop_name,
                                                   fingerprint.navigator_prototype[prop_name]
                                               )
-                                             )
+                                              )
 
         data = {"properties_overwritten": "~~".join(overwritten_properties)} if \
-                overwritten_properties else {}
+            overwritten_properties else {}
         return AnalysisResult(Scanner.NAVIGATOR_OVERWRITTEN, consistent, data)
-
 
     def __is_canvas_overwritten(self, fingerprint: Fingerprint):
         """
@@ -797,7 +791,6 @@ class Scanner:
         consistent = "native code" in fingerprint.canvas_desc
         return AnalysisResult(Scanner.CANVAS_OVERWRITTEN, consistent, data={})
 
-
     def __is_screen_overwritten(self, fingerprint: Fingerprint):
         """
             Analysis name: SCREEN_OVERWRITTEN
@@ -806,7 +799,6 @@ class Scanner:
         """
         consistent = fingerprint.screen_desc != "error"
         return AnalysisResult(Scanner.SCREEN_OVERWRITTEN, consistent, data={})
-
 
     def __is_timezone_overwritten(self, fingerprint: Fingerprint):
         """
@@ -817,50 +809,29 @@ class Scanner:
         consistent = fingerprint.timezone_desc != "error"
         return AnalysisResult(Scanner.TIMEZONE_OVERWRITTEN, consistent, data={})
 
-
-    def __is_screen_size_consistent(self, fingerprint: Fingerprint):
-        """
-            Analysis name: SCREEN_SIZE
-            For the moment test only in case the device claims to be an iPhone if its screen size
-            belongs to a defined list of allowed screen resolution
-        """
-        allowed_iphone_resolutions = {
-                                        "320,568", "568,320", "375,667","667,375",
-                                        "768,1024", "1024,768", "2048,1536", "1536,2048",
-                                      }
-        consistent = True
-        data = {}
-        if fingerprint.os_ref_js == "iOS" and \
-           fingerprint.screen_resolution not in allowed_iphone_resolutions:
-           consistent = False
-           data["screen_size"] = fingerprint.screen_resolution
-        
-        return AnalysisResult(Scanner.SCREEN_SIZE, consistent, data)
-
     def __is_accelerometer_consistent(self, fingerprint: Fingerprint):
         """
             Analysis name: ACCELEROMETER
-            Returns True if accelerometer is consistent with the 
+            Returns True if accelerometer is consistent with the
             class of device, i.e mobile device and accelerometer is True,
             or computer device and accelerometer is False
-        """ 
+        """
         is_mobile_device = fingerprint.os_ref_js == "Android" or \
-                          fingerprint.os_ref_js == "iOS" or \
-                          fingerprint.os_ref_js == "Windows Phone"
-     
+                           fingerprint.os_ref_js == "iOS" or \
+                           fingerprint.os_ref_js == "Windows Phone"
+
         consistent = True
         if is_mobile_device and not fingerprint.accelerometer:
             consistent = False
         elif not is_mobile_device and fingerprint.accelerometer:
             consistent = False
-        
+
         return AnalysisResult(Scanner.ACCELEROMETER, consistent, data={})
-    
 
     def __is_product_sub_consistent_browser(self, fingerprint: Fingerprint):
         """
             Analysis name: PRODUCT_SUB
-            Returns True if productSub is "20030107" on 
+            Returns True if productSub is "20030107" on
             Chrome, Safari and Opera
         """
         consistent = True
@@ -869,21 +840,20 @@ class Scanner:
             fingerprint.browser_ref_js == "Chrome Mobile" or \
             fingerprint.browser_ref_js == "Safari" or \
             fingerprint.browser_ref_js == "Opera") and \
-            fingerprint.product_sub != "20030107":
+                fingerprint.product_sub != "20030107":
             consistent = False
         elif fingerprint.browser_ref_js != "Other" and \
-             fingerprint.browser_ref_js != "Chrome" and \
-             fingerprint.browser_ref_js != "Chrome Mobile" and \
-             fingerprint.browser_ref_js != "Safari" and \
-             fingerprint.browser_ref_js != "Opera" and \
-             fingerprint.product_sub == "20030107":
-             consistent = False
+                fingerprint.browser_ref_js != "Chrome" and \
+                fingerprint.browser_ref_js != "Chrome Mobile" and \
+                fingerprint.browser_ref_js != "Safari" and \
+                fingerprint.browser_ref_js != "Opera" and \
+                fingerprint.product_sub == "20030107":
+            consistent = False
 
         if not consistent:
             data["product_sub"] = fingerprint.product_sub
 
         return AnalysisResult(Scanner.PRODUCT_SUB, consistent, data)
-
 
     def __is_etsl_consistent_browser(self, fingerprint: Fingerprint):
         """
@@ -905,16 +875,16 @@ class Scanner:
         consistent = True
         data = {}
         if fingerprint.browser_ref_js in browser_to_length and \
-           browser_to_length[fingerprint.browser_ref_js] != fingerprint.etsl:
-           consistent = False
-           data["etsl"] = fingerprint.etsl
-        
+                browser_to_length[fingerprint.browser_ref_js] != fingerprint.etsl:
+            consistent = False
+            data["etsl"] = fingerprint.etsl
+
         return AnalysisResult(Scanner.ETSL, consistent, data)
 
     def __is_touch_support_consistent(self, fingerprint: Fingerprint):
         """
             Analysis name: TOUCH_SUPPORT
-            Checks if touch support is active only on Android, iOS, or 
+            Checks if touch support is active only on Android, iOS, or
             Windows Phone devices
         """
         consistent = True
@@ -922,13 +892,11 @@ class Scanner:
         if (fingerprint.os_ref_js == "Android" or \
             fingerprint.os_ref_js == "iOS" or \
             fingerprint.os_ref_js == "Windows Phone") and \
-            fingerprint.touch_support == "0;false;false":
+                fingerprint.touch_support == "0;false;false":
             consistent = False
             data["touch_support"] = fingerprint.touch_support
-        
+
         return AnalysisResult(Scanner.TOUCH_SUPPORT, consistent, data)
-
-
 
     def __are_canvas_pixels_consistent(self, fingerprint: Fingerprint, all_tests=True):
         """
@@ -962,37 +930,37 @@ class Scanner:
                             if np.array_equal(v2[:3] - color[:3], [0, 0, 0]):
                                 nb_equals += 1
                     if nb_equals == 0 or \
-                        7*nb_equals < nb_close:
+                            7 * nb_equals < nb_close:
                         failed_one_color = True
                         if not "color_failed" in data:
                             data["color_failed"] = []
                         data["color_failed"].append(str(color))
-                
+
                 if failed_one_color:
                     inconsistent = True
 
             if not inconsistent or all_tests:
                 # We count the number of transparent pixels
-                id_t = img[:,:,3] > 0
-                id_f = img[:,:,3] == 0
-                img[id_t,3] = 1
-                img[id_f,3] = 0
-                img = img[:,:,3]
+                id_t = img[:, :, 3] > 0
+                id_f = img[:, :, 3] == 0
+                img[id_t, 3] = 1
+                img[id_f, 3] = 0
+                img = img[:, :, 3]
                 nb_zeros = 24000 - np.count_nonzero(img)
 
-                if nb_zeros < 4000 or nb_zeros == 24000:
+                # if nb_zeros < 4000 or nb_zeros == 24000:
+                if nb_zeros < self.number_transparent_pixels or nb_zeros == 24000:
                     inconsistent = True
-                    data["zeros_pixels"] = nb_zeros 
-            
+                    data["zeros_pixels"] = nb_zeros
+
             if not inconsistent or all_tests:
                 # We count the number of isolated cells
-                filtered_array = filter_isolated_cells(img, struct=np.ones((3,3)))
+                filtered_array = filter_isolated_cells(img, struct=np.ones((3, 3)))
                 diff_mat = img != filtered_array
                 isolated_pixels = np.nonzero(diff_mat == True)
                 if len(isolated_pixels[0]) > 8:
                     inconsistent = True
                     data["isolated_pixels"] = len(isolated_pixels[0])
-            
 
         return AnalysisResult(Scanner.CANVAS_PIXELS, not inconsistent, data)
 
